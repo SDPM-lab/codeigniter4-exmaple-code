@@ -3,6 +3,7 @@
 namespace App\Models\V1;
 
 use CodeIgniter\Model;
+use App\Entities\TodoListsEntity;
 
 class TodoListsModel extends Model
 {
@@ -10,7 +11,7 @@ class TodoListsModel extends Model
     protected $table            = 'TodoLists';
     protected $primaryKey       = 't_key';
     protected $useAutoIncrement = true;
-    protected $returnType       = 'array';
+    protected $returnType       = TodoListsEntity::class;
     protected $useSoftDeletes   = true;
     protected $protectFields    = true;
     protected $allowedFields    = [
@@ -40,18 +41,18 @@ class TodoListsModel extends Model
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
-
+    
     /**
-     * Find all user todo builder.
+     * Get all todos for a specific user as entities.
      *
      * @param integer $m_key
-     * @return \CodeIgniter\Database\BaseBuilder|false
+     * @return array|false
      */
-    public function getAllTodoByUserBuilder(int $m_key): \CodeIgniter\Database\BaseBuilder|false
-    {
-        $builder = $this->db->table("TodoLists")
-                            ->where("m_key", $m_key)
-                            ->where("deleted_at", null);
-        return $builder ?? false;
+    public function getAllTodosByUser(int $m_key): array|false
+    { 
+        $results = $this->where('m_key', $m_key)
+                        ->where('deleted_at', null)
+                        ->findAll();
+        return $results ?: false;
     }
 }

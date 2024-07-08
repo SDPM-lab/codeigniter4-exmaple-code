@@ -5,6 +5,7 @@ namespace App\Controllers\Api\V1;
 use App\Controllers\BaseController;
 use App\Models\V1\TodoListsModel;
 use CodeIgniter\API\ResponseTrait;
+use App\Entities\TodoListsEntity;
 
 class TodoController extends BaseController
 {
@@ -30,16 +31,25 @@ class TodoController extends BaseController
     public function index()
     {
         // Find the data from database.
-        $todoList = $this->todoListsModel->where(
-            "m_key",
-            $this->userData["key"]
-        )->findAll();
+        $todoList = $this->todoListsModel->where("m_key",$this->userData["key"])
+                                         ->findAll();
 
+        $returnData = [];
+
+        // Extract only the required fields from each todo item.
+        foreach ($todoList as $todo) {
+            $returnData[] = [
+                "title"   => $todo->t_title,
+                "content" => $todo->t_content,
+                'key'     => $todo->t_key,
+            ];
+        }
+    
         return $this->respond([
             "msg"  => "success",
-            "data" => $todoList
+            "data" => $returnData
         ]);
-    }
+}
 
     /**
      * [GET] /todo/{key}
@@ -54,10 +64,8 @@ class TodoController extends BaseController
         }
 
         // Find the data from database.
-        $todo = $this-> todoListsModel->where(
-            "m_key",
-            $this->userData["key"]
-        )->find($key);
+        $todo = $this-> todoListsModel->where("m_key", $this->userData["key"])
+                                      ->find($key);
 
         if ($todo === null) {
             return $this->failNotFound("Todo is not found.");
@@ -65,9 +73,9 @@ class TodoController extends BaseController
 
         // Define the return data structure.
         $returnData = [
-            "title"   => $todo['t_title'],
-            "content" => $todo['t_content'],
-            'key'     => $todo['t_key'],
+            "title"   => $todo->t_title,
+            "content" => $todo->t_content,
+            'key'     => $todo->t_key,
         ];
 
         return $this->respond([
@@ -84,38 +92,40 @@ class TodoController extends BaseController
      */
     public function create()
     {
-        // Get the  data from request.
+        // Get the data from request.
         $data    = $this->request->getJSON();
         $title   = $data->title   ?? null;
         $content = $data->content ?? null;
 
         // Check if account and password is correct.
-        if ($title === null || $content === null) {
+        if (empty($title) || empty($content)) {
             return $this->fail("Pass in data is not found.", 404);
         }
 
-        if ($title === " " || $content === " ") {
-            return $this->fail("Pass in data is not found.", 404);
+        // Create a new entity instance and populate it.
+        $todo = new TodoListsEntity();
+
+        $todo->t_title   = $title;
+        $todo->t_content = $content;
+        $todo->m_key     = $this->userData["key"];
+
+        // Insert data into database using ORM.
+        if (!$this->todoListsModel->save($todo)) {
+            return $this->fail("Create failed.");
+        }
+        else{
+            $todoListData = [
+                'title'   => $todo->t_title,
+                'content' => $todo->t_content
+            ];
         }
 
-        // Insert data into database.
-        $createdKey = $this->todoListsModel->insert([
-            "t_title"   => $title,
-            "t_content" => $content,
-            "m_key"     => $this->userData["key"]
+        $this->clearCache($this->userData["key"]);
+
+        return $this->respond([
+            "msg"  => "Create successfully",
+            "data" => $todoListData
         ]);
-
-        // Check if insert successfully.
-        if ($createdKey === false) {
-            return $this->fail("create failed.");
-        } else {
-            $this->clearCache($this->userData["key"]);
-
-            return $this->respond([
-                "msg"  => "create successfully",
-                "data" => $createdKey
-            ]);
-        }
     }
 
     /**
@@ -145,27 +155,25 @@ class TodoController extends BaseController
             return $this->failNotFound("This data is not found.");
         }
 
+        // Update the entity.
         if ($title !== null) {
-            $willUpdateData["t_title"] = $title;
+            $willUpdateData->t_title = $title;
         }
 
         if ($content !== null) {
-            $willUpdateData["t_content"] = $content;
+            $willUpdateData->t_content = $content;
         }
 
-        // Do update action.
-        $isUpdated = $this->todoListsModel->update($key, $willUpdateData);
-
-        if ($isUpdated === false) {
+        // Save the updated entity using ORM.
+        if (!$this->todoListsModel->save($willUpdateData)) {
             return $this->fail("Update failed.");
-        } else {
-            // Call clear file cache function.
-            $this->clearCache($this->userData["key"]);
-
-            return $this->respond([
-                "msg" => "Update successfully"
-            ]);
         }
+
+        $this->clearCache($this->userData["key"]);
+
+        return $this->respond([
+            "msg" => "Update successfully"
+        ]);
     }
 
     /**
@@ -180,26 +188,28 @@ class TodoController extends BaseController
             return $this->failNotFound("Key is not found.");
         }
 
-        // Check the data is exist or not.
-        if ($this->todoListsModel->find($key) === null) {
+        // Find the existing entity.
+        $todo = $this->todoListsModel->where(
+            'm_key', 
+            $this->userData["key"]
+        )->find($key);
+
+        if ($todo === null) {
             return $this->failNotFound("This data is not found.");
         }
 
         // Do delete action.
-        $isDeleted = $this-> todoListsModel->where(
-            "m_key",
-            $this->userData["key"]
-        )->delete($key);
+        $isDeleted = $this->todoListsModel->delete($key);
 
         if ($isDeleted === false) {
             return $this->fail("Delete failed.");
-        } else {
-            $this->clearCache($this->userData["key"]);
-            
-            return $this->respond([
-                "msg" => "Delete successfully"
-            ]);
         }
+
+        $this->clearCache($this->userData["key"]);
+        
+        return $this->respond([
+            "msg" => "Delete successfully"
+        ]);
     }
 
     /**

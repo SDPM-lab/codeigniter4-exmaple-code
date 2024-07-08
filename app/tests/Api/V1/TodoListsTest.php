@@ -3,6 +3,7 @@
 use App\Models\V1\TodoListsModel;
 use Tests\Support\DatabaseTestCase;
 use CodeIgniter\Test\FeatureTestTrait;
+use App\Entities\TodoListsEntity;
 
 class TodoListsTest extends DatabaseTestCase
 {
@@ -20,7 +21,7 @@ class TodoListsTest extends DatabaseTestCase
         parent::setUp();
 
         //seed some user fake data.
-        $now   = date("Y-m-d H:i:s");
+        $now  = date("Y-m-d H:i:s");
 
         $data = [
             [
@@ -70,7 +71,12 @@ class TodoListsTest extends DatabaseTestCase
 
         $returnData = json_decode($results->getJSON());
 
-        $this->assertEquals(1, $returnData->data);
+        $excepted = [
+            "title"     => "Example Title",
+            "content"   => "Example Content",
+        ];
+
+        $this->assertEquals($excepted, (array)$returnData->data);
 
         $this->seeInDatabase('TodoLists', [
             "t_title"   => $createData["title"],
@@ -80,37 +86,28 @@ class TodoListsTest extends DatabaseTestCase
 
     public function testShowAllDataSuccessfully()
     {
-        $createData = [
-            "title"     => "Example Title",
-            "content"   => "Example Content",
-        ];
-
         $todoListsModel = new TodoListsModel();
 
-        $now = date("Y-m-d H:i:s");
-
-        $createdKey = $todoListsModel->insert([
-            "t_title"    => $createData["title"],
-            "t_content"  => $createData["content"],
+        $createData = [
+            "t_title"    => "Example Title",
+            "t_content"  => "Example Content",
             "m_key"      => 1,
-            "created_at" => $now,
-            "updated_at" => $now,
-        ]);
+        ];
 
+        $todo = new TodoListsEntity($createData);
+
+        $createdKey = $todoListsModel->save($todo);
         $this->assertEquals(1, $createdKey);
 
         $createSecondData = [
-            "title"     => "Example Title 2",
-            "content"   => "Example Content 2",
+            "t_title"     => "Example Title 2",
+            "t_content"   => "Example Content 2",
+            "m_key"      => 1,
         ];
 
-        $createdSecondKey = $todoListsModel->insert([
-            "t_title"   => $createSecondData["title"],
-            "t_content" => $createSecondData["content"],
-            "m_key"     => 1,
-            "created_at" => $now,
-            "updated_at" => $now,
-        ]);
+        $todoSecond = new TodoListsEntity($createSecondData);
+
+        $createdSecondKey = $todoListsModel->save($todoSecond);
 
         $this->assertEquals(2, $createdSecondKey);
 
@@ -121,22 +118,14 @@ class TodoListsTest extends DatabaseTestCase
 
         $excepted = [
             [
-                "t_key"      => "1",
-                "t_title"    => "Example Title",
-                "t_content"  => "Example Content",
-                "m_key"      => "1",
-                "created_at" => $now,
-                "updated_at" => $now,
-                "deleted_at" => null
+                "title"    => "Example Title",
+                "content"  => "Example Content",
+                "key"      => "1",
             ],
             [
-                "t_key"      => "2",
-                "t_title"    => "Example Title 2",
-                "t_content"  => "Example Content 2",
-                "m_key"      => "1",
-                "created_at" => $now,
-                "updated_at" => $now,
-                "deleted_at" => null
+                "title"    => "Example Title 2",
+                "content"  => "Example Content 2",
+                "key"      => "2",
             ]
         ];
 
@@ -146,38 +135,28 @@ class TodoListsTest extends DatabaseTestCase
 
     public function testShowSingleDataSuccessfully()
     {
-        $createData = [
-            "title"     => "Example Title",
-            "content"   => "Example Content",
-        ];
-
         $todoListsModel = new TodoListsModel();
 
-        $now = date("Y-m-d H:i:s");
-
-        $createdKey = $todoListsModel->insert([
-            "t_title"    => $createData["title"],
-            "t_content"  => $createData["content"],
+        $createData = [
+            "t_title"    => "Example Title",
+            "t_content"  => "Example Content",
             "m_key"      => 1,
-            "created_at" => $now,
-            "updated_at" => $now,
-        ]);
+        ];
 
+        $todo = new TodoListsEntity($createData);
+
+        $createdKey = $todoListsModel->save($todo);
         $this->assertEquals(1, $createdKey);
 
         $createSecondData = [
-            "title"     => "Example Title 2",
-            "content"   => "Example Content 2",
+            "t_title"    => "Example Title 2",
+            "t_content"  => "Example Content 2",
+            "m_key"      => 1,
         ];
 
-        $createdSecondKey = $todoListsModel->insert([
-            "t_title"   => $createSecondData["title"],
-            "t_content" => $createSecondData["content"],
-            "m_key"     => 1,
-            "created_at" => $now,
-            "updated_at" => $now,
-        ]);
+        $todoSecond = new TodoListsEntity($createSecondData);
 
+        $createdSecondKey = $todoListsModel->save($todoSecond);
         $this->assertEquals(2, $createdSecondKey);
 
         $results = $this->withSession($this->sessionData)
@@ -186,9 +165,9 @@ class TodoListsTest extends DatabaseTestCase
         $returnData = json_decode($results->getJSON());
 
         $excepted = [
-            "key"      => "2",
             "title"    => "Example Title 2",
-            "content"  => "Example Content 2"
+            "content"  => "Example Content 2",
+            "key"      => "2",
         ];
 
         $this->assertEquals($excepted, (array)$returnData->data);
@@ -196,25 +175,23 @@ class TodoListsTest extends DatabaseTestCase
 
     public function testUpdateTodoSuccessfully()
     {
-        $createData = [
-            "title"     => "Example Title",
-            "content"   => "Example Content",
-        ];
-
         $todoListsModel = new TodoListsModel();
 
-        $createdKey = $todoListsModel->insert([
-            "t_title"   => $createData["title"],
-            "t_content" => $createData["content"],
-            "m_key"     => 1,
-        ]);
+        $createData = [
+            "t_title"    => "Example Title",
+            "t_content"  => "Example Content",
+            "m_key"      => 1,
+        ];
 
+        $todo = new TodoListsEntity($createData);
+
+        $createdKey = $todoListsModel->save($todo);
         $this->assertEquals(1, $createdKey);
 
         $this->seeInDatabase('TodoLists', [
-            "t_title"   => $createData["title"],
-            "t_content" => $createData["content"],
-            "m_key"     => 1
+            "t_title"   => $createData["t_title"],
+            "t_content" => $createData["t_content"],
+            "m_key"     => $createData["m_key"],
         ]);
 
         $updatedData = [
@@ -244,38 +221,34 @@ class TodoListsTest extends DatabaseTestCase
 
     public function testDeleteTodoSuccessfully()
     {
-        $createData = [
-            "title"     => "Example Title",
-            "content"   => "Example Content",
-        ];
+        $now = date("Y-m-d H:i:s");
 
         $todoListsModel = new TodoListsModel();
 
-        $now = date("Y-m-d H:i:s");
-
-        $createdKey = $todoListsModel->insert([
-            "t_title"    => $createData["title"],
-            "t_content"  => $createData["content"],
+        $createData = [
+            "t_title"    => "Example Title",
+            "t_content"  => "Example Content",
             "m_key"      => 1,
             "created_at" => $now,
             "updated_at" => $now,
-        ]);
+        ];
 
+        $todo = new TodoListsEntity($createData);
+
+        $createdKey = $todoListsModel->save($todo);
         $this->assertEquals(1, $createdKey);
 
         $createSecondData = [
-            "title"     => "Example Title 2",
-            "content"   => "Example Content 2",
-        ];
-
-        $createdSecondKey = $todoListsModel->insert([
-            "t_title"   => $createSecondData["title"],
-            "t_content" => $createSecondData["content"],
-            "m_key"     => 1,
+            "t_title"    => "Example Title 2",
+            "t_content"  => "Example Content 2",
+            "m_key"      => 1,
             "created_at" => $now,
             "updated_at" => $now,
-        ]);
+        ];
 
+        $todoSecond = new TodoListsEntity($createSecondData);
+
+        $createdSecondKey = $todoListsModel->save($todoSecond);
         $this->assertEquals(2, $createdSecondKey);
 
         $results = $this->withSession($this->sessionData)
@@ -284,9 +257,9 @@ class TodoListsTest extends DatabaseTestCase
         $returnData = json_decode($results->getJSON());
 
         $excepted = [
-            "Delete successfully"
+            "msg" => "Delete successfully"
         ];
 
-        $this->assertEquals($excepted, (array)$returnData->msg);
+        $this->assertEquals($excepted, (array)$returnData);
     }
 }

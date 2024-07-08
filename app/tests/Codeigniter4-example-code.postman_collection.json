@@ -314,7 +314,7 @@
               "pm.test(\"Check the return and whether feature run successfu\", function () {",
               "    var jsonData = pm.response.json();",
               "",
-              "    pm.expect(jsonData.msg).to.eql(\"create successfully\");",
+              "    pm.expect(jsonData.msg).to.eql(\"Create successfully\");",
               "});",
               ""
             ],
@@ -358,7 +358,7 @@
               "pm.test(\"Check the return and whether feature run successfu\", function () {",
               "    var jsonData = pm.response.json();",
               "",
-              "    pm.expect(jsonData.msg).to.eql(\"create successfully\");",
+              "    pm.expect(jsonData.msg).to.eql(\"Create successfully\");",
               "});",
               ""
             ],
@@ -542,7 +542,7 @@
       "response": []
     },
     {
-      "name": "Todo-update Copy",
+      "name": "Todo-delete",
       "event": [
         {
           "listen": "test",
