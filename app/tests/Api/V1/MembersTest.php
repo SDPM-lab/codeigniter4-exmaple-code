@@ -99,7 +99,6 @@ class MembersTest extends DatabaseTestCase
 
         $this->seeInDatabase("Members", [
             "m_account"  => "example_account_2",
-            "m_password" => password_hash("example_password_2", PASSWORD_DEFAULT),
             "m_name"     => "Example User 2"
         ]);
     }
