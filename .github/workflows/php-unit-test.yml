@@ -24,9 +24,9 @@ jobs:
         working-directory: ./app
         run: composer install
 
-      - name: Run PHPUnit Tests
-        uses: php-actions/phpunit@v9
+      - name: PHPUnit tests
+        uses: php-actions/phpunit@v3
         with:
-          php-version: "8.2"
-          configuration: app/tests/phpunit.xml
-          coverage: text
+            memory_limit: "256M"
+            php_extensions: "xdebug"
+            coverage_clover: "coverage/clover.xml"
