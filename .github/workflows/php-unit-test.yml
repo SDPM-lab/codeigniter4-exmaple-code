@@ -24,12 +24,9 @@ jobs:
         working-directory: ./app
         run: composer install
 
-      - name: PHPUnit Tests
-        uses: php-actions/phpunit@master
-        env:
-          TEST_NAME: Scarlett
+      - name: Run PHPUnit Tests
+        uses: php-actions/phpunit@v9
         with:
-          version: 9.6
-          bootstrap: app/vendor/autoload.php
+          php-version: "8.2"
           configuration: app/tests/phpunit.xml
-          args: --coverage-text
+          coverage: text
