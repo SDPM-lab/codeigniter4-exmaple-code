@@ -24,9 +24,12 @@ jobs:
         working-directory: ./app
         run: composer install
 
-      - name: PHPUnit tests
-        uses: php-actions/phpunit@v3
+      - name: PHPUnit Tests
+        uses: php-actions/phpunit@master
+        env:
+          TEST_NAME: Scarlett
         with:
-            memory_limit: "256M"
-            php_extensions: "xdebug"
-            coverage_clover: "coverage/clover.xml"
+          version: 9.6
+          bootstrap: app/vendor/autoload.php
+          configuration: app/tests/phpunit.xml
+          args: --coverage-text
